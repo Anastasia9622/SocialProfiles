@@ -58,19 +58,10 @@ public class ThemeTests
         Assert.Equal(blackOnWhite.ContrastRatio(), whiteOnBlack.ContrastRatio(), 2);
     }
 
-    [Fact]
-    public void ContrastRatio_SameColors_Is1()
-    {
-        var theme = new Theme("#336699", "#2a1a4d", "#336699", "#ff5fa2");
-
-        Assert.Equal(1.0, theme.ContrastRatio(), 2);
-    }
 
     [Theory]
-    [InlineData("#ff0000", "#ffffff", 4.0)]    // чистий червоний на білому
     [InlineData("#0000ff", "#ffffff", 8.59)]   // чистий синій на білому
     [InlineData("#767676", "#ffffff", 4.54)]   // сірий, ще проходить поріг 4.5
-    [InlineData("#777777", "#ffffff", 4.48)]   // сірий, трохи нижче порога
     [InlineData("#f3eaff", "#1b1033", 15.4)]   // текст і фон твоєї темної теми
     public void ContrastRatio_KnownColors_MatchesExpected(
         string textColor, string backgroundColor, double expected)
@@ -78,5 +69,24 @@ public class ThemeTests
         var theme = new Theme(backgroundColor, "#2a1a4d", textColor, "#ff5fa2");
 
         Assert.Equal(expected, theme.ContrastRatio(), 1);
+    }
+
+    [Theory]
+    [InlineData("#cccccc", "#ffffff")]
+    [InlineData("#777777", "#ffffff")]
+    [InlineData("#336699", "#336699")]
+    public void Constructor_WithLowContrast_ThrowsDomainException(
+    string textColor, string backgroundColor)
+    {
+        Assert.Throws<DomainException>(() =>
+            new Theme(backgroundColor, "#2a1a4d", textColor, "#ff5fa2"));
+    }
+
+    [Fact]
+    public void Constructor_WithContrastJustAboveThreshold_CreatesTheme()
+    {
+        var theme = new Theme("#ffffff", "#2a1a4d", "#767676", "#ff5fa2");
+
+        Assert.True(theme.ContrastRatio() >= 4.5);
     }
 }

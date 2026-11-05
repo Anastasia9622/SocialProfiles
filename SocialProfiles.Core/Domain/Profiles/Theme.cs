@@ -27,9 +27,10 @@ public class Theme
     public bool Validate()
     {
         var colors = new[] { BackgroundColor, CardColor, TextColor, AccentColor };
+        if (ContrastRatio() < 4.5)
+            throw new DomainException("Занадто низький контраст між текстом і фоном.");
         return colors.All(IsValidColor);
     }
-
 
     private static bool IsValidColor(string? color) =>
         !string.IsNullOrEmpty(color) && HexColor.IsMatch(color);
