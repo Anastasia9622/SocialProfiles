@@ -10,10 +10,8 @@
     <Folder Include="Application\Interfaces\" />
     <Folder Include="Application\Services\" />
     <Folder Include="Domain\Blocks\" />
-    <Folder Include="Domain\Exceptions\" />
     <Folder Include="Domain\Social\" />
     <Folder Include="Domain\Presets\" />
-    <Folder Include="Domain\Profiles\" />
   </ItemGroup>
 
 </Project>
