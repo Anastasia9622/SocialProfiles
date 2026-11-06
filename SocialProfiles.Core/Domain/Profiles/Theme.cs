@@ -22,13 +22,14 @@ public class Theme
 
         if (!Validate())
             throw new DomainException("Тема містить некоректний колір. Використовуйте формат #RRGGBB.");
+
+        if (ContrastRatio() < 4.5)
+            throw new DomainException("Занадто низький контраст між текстом і фоном.");
     }
 
     public bool Validate()
     {
         var colors = new[] { BackgroundColor, CardColor, TextColor, AccentColor };
-        if (ContrastRatio() < 4.5)
-            throw new DomainException("Занадто низький контраст між текстом і фоном.");
         return colors.All(IsValidColor);
     }
 
