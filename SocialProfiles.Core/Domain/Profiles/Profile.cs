@@ -99,4 +99,13 @@ public class Profile
 
         return displayName.Trim();
     }
+
+    // Потрібен лише для EF Core, коли він відновлює профіль із бази.
+    private Profile()
+    {
+        UserId = null!;
+        Username = null!;
+        DisplayName = null!;
+        Theme = null!;
+    }
 }

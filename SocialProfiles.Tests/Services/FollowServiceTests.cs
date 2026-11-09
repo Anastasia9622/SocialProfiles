@@ -55,6 +55,8 @@ public class FollowServiceTests
     public async Task UnfollowAsync_ExistingFollow_RemovesIt()
     {
         await _service.FollowAsync("user-1", "user-2");
+        Assert.True(await _service.IsFollowingAsync("user-1", "user-2"));
+
         await _service.UnfollowAsync("user-1", "user-2");
 
         Assert.False(await _service.IsFollowingAsync("user-1", "user-2"));
@@ -65,7 +67,6 @@ public class FollowServiceTests
     {
         await Assert.ThrowsAsync<DomainException>(() =>
             _service.UnfollowAsync("user-1", "user-2"));
-        //або заст це RemoveAsync(string followerId, string followedId);
     }
 
     [Fact]

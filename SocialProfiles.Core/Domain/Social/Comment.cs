@@ -22,7 +22,7 @@ public class Comment
     }
 
     // Приватний конструктор використовується також для створення відповідей.
-    private Comment(Guid profileId, string authorId, string text, Guid? parentCommentId)
+    private Comment(Guid profileId, string authorId, string text, Guid? parentId)
     {
         if (profileId == Guid.Empty)
             throw new DomainException("Не вказано стіну для коментаря.");
@@ -36,7 +36,7 @@ public class Comment
         ProfileId = profileId;
         AuthorId = authorId;
         Text = text;
-        ParentCommentId = parentCommentId;
+        ParentCommentId = parentId;
     }
 
     public Comment CreateReply(string authorId, string text)
