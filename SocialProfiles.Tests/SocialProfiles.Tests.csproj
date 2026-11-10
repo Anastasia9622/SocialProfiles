@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SocialProfiles.Core\SocialProfiles.Core.csproj" />
+    <ProjectReference Include="..\SocialProfiles.Web\SocialProfiles.Web.csproj" />
   </ItemGroup>
 
   <ItemGroup>
