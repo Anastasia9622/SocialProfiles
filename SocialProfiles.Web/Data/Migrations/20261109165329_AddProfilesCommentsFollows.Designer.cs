@@ -11,8 +11,8 @@ using SocialProfiles.Web.Data;
 namespace SocialProfiles.Web.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20261109161408_InitialCreate")]
-    partial class InitialCreate
+    [Migration("20261109165329_AddProfilesCommentsFollows")]
+    partial class AddProfilesCommentsFollows
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -148,6 +148,132 @@ namespace SocialProfiles.Web.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
+            modelBuilder.Entity("SocialProfiles.Core.Domain.Blocks.ProfileBlock", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("BlockType")
+                        .IsRequired()
+                        .HasMaxLength(13)
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsVisible")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<int>("Position")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<Guid?>("ProfileId")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProfileId");
+
+                    b.ToTable("ProfileBlocks", (string)null);
+
+                    b.HasDiscriminator<string>("BlockType").HasValue("ProfileBlock");
+
+                    b.UseTphMappingStrategy();
+                });
+
+            modelBuilder.Entity("SocialProfiles.Core.Domain.Profiles.Profile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("About")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AvatarPath")
+                        .HasMaxLength(300)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("BannerPath")
+                        .HasMaxLength(300)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("DisplayName")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("UserId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Username")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("TEXT")
+                        .UseCollation("NOCASE");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.HasIndex("Username")
+                        .IsUnique();
+
+                    b.ToTable("Profiles", (string)null);
+                });
+
+            modelBuilder.Entity("SocialProfiles.Core.Domain.Social.Comment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("AuthorId")
+                        .IsRequired()
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid?>("ParentCommentId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("ProfileId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("Text")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AuthorId");
+
+                    b.HasIndex("ParentCommentId");
+
+                    b.HasIndex("ProfileId");
+
+                    b.ToTable("Comments", (string)null);
+                });
+
+            modelBuilder.Entity("SocialProfiles.Core.Domain.Social.Follow", b =>
+                {
+                    b.Property<string>("FollowerId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<string>("FollowedId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("TEXT");
+
+                    b.HasKey("FollowerId", "FollowedId");
+
+                    b.HasIndex("FollowedId");
+
+                    b.ToTable("Follows", (string)null);
+                });
+
             modelBuilder.Entity("SocialProfiles.Web.Data.ApplicationUser", b =>
                 {
                     b.Property<string>("Id")
@@ -212,6 +338,27 @@ namespace SocialProfiles.Web.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
+            modelBuilder.Entity("SocialProfiles.Core.Domain.Blocks.AboutBlock", b =>
+                {
+                    b.HasBaseType("SocialProfiles.Core.Domain.Blocks.ProfileBlock");
+
+                    b.HasDiscriminator().HasValue("About");
+                });
+
+            modelBuilder.Entity("SocialProfiles.Core.Domain.Blocks.CommentsBlock", b =>
+                {
+                    b.HasBaseType("SocialProfiles.Core.Domain.Blocks.ProfileBlock");
+
+                    b.HasDiscriminator().HasValue("Comments");
+                });
+
+            modelBuilder.Entity("SocialProfiles.Core.Domain.Blocks.FollowersBlock", b =>
+                {
+                    b.HasBaseType("SocialProfiles.Core.Domain.Blocks.ProfileBlock");
+
+                    b.HasDiscriminator().HasValue("Followers");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
                 {
                     b.HasOne("Microsoft.AspNetCore.Identity.IdentityRole", null)
@@ -261,6 +408,103 @@ namespace SocialProfiles.Web.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("SocialProfiles.Core.Domain.Blocks.ProfileBlock", b =>
+                {
+                    b.HasOne("SocialProfiles.Core.Domain.Profiles.Profile", null)
+                        .WithMany("Blocks")
+                        .HasForeignKey("ProfileId")
+                        .OnDelete(DeleteBehavior.Cascade);
+                });
+
+            modelBuilder.Entity("SocialProfiles.Core.Domain.Profiles.Profile", b =>
+                {
+                    b.HasOne("SocialProfiles.Web.Data.ApplicationUser", null)
+                        .WithOne()
+                        .HasForeignKey("SocialProfiles.Core.Domain.Profiles.Profile", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.OwnsOne("SocialProfiles.Core.Domain.Profiles.Theme", "Theme", b1 =>
+                        {
+                            b1.Property<Guid>("ProfileId")
+                                .HasColumnType("TEXT");
+
+                            b1.Property<string>("AccentColor")
+                                .IsRequired()
+                                .HasMaxLength(7)
+                                .HasColumnType("TEXT")
+                                .HasColumnName("AccentColor");
+
+                            b1.Property<string>("BackgroundColor")
+                                .IsRequired()
+                                .HasMaxLength(7)
+                                .HasColumnType("TEXT")
+                                .HasColumnName("BackgroundColor");
+
+                            b1.Property<string>("CardColor")
+                                .IsRequired()
+                                .HasMaxLength(7)
+                                .HasColumnType("TEXT")
+                                .HasColumnName("CardColor");
+
+                            b1.Property<string>("TextColor")
+                                .IsRequired()
+                                .HasMaxLength(7)
+                                .HasColumnType("TEXT")
+                                .HasColumnName("TextColor");
+
+                            b1.HasKey("ProfileId");
+
+                            b1.ToTable("Profiles");
+
+                            b1.WithOwner()
+                                .HasForeignKey("ProfileId");
+                        });
+
+                    b.Navigation("Theme")
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("SocialProfiles.Core.Domain.Social.Comment", b =>
+                {
+                    b.HasOne("SocialProfiles.Web.Data.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("AuthorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SocialProfiles.Core.Domain.Social.Comment", null)
+                        .WithMany()
+                        .HasForeignKey("ParentCommentId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SocialProfiles.Core.Domain.Profiles.Profile", null)
+                        .WithMany()
+                        .HasForeignKey("ProfileId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("SocialProfiles.Core.Domain.Social.Follow", b =>
+                {
+                    b.HasOne("SocialProfiles.Web.Data.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("FollowedId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("SocialProfiles.Web.Data.ApplicationUser", null)
+                        .WithMany()
+                        .HasForeignKey("FollowerId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+                });
+
+            modelBuilder.Entity("SocialProfiles.Core.Domain.Profiles.Profile", b =>
+                {
+                    b.Navigation("Blocks");
                 });
 #pragma warning restore 612, 618
         }
