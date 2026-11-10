@@ -1,9 +1,12 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using SocialProfiles.Core.Application.Interfaces;
+using SocialProfiles.Core.Application.Services;
 using SocialProfiles.Web.Components;
 using SocialProfiles.Web.Components.Account;
 using SocialProfiles.Web.Data;
+using SocialProfiles.Web.Data.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -24,8 +27,21 @@ builder.Services.AddAuthentication(options =>
     .AddIdentityCookies();
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection") ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
-builder.Services.AddDbContext<ApplicationDbContext>(options =>
-      options.UseSqlite(connectionString));
+// Фабрика контексту для наших репозиторіїв (короткі контексти на кожну операцію).
+builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
+    options.UseSqlite(connectionString));
+
+// Звичайний ApplicationDbContext залишаємо для Identity, але беремо його з тієї ж фабрики.
+builder.Services.AddScoped<ApplicationDbContext>(provider =>
+    provider.GetRequiredService<IDbContextFactory<ApplicationDbContext>>().CreateDbContext());
+
+// Сховища та сервіси.
+builder.Services.AddScoped<IProfileRepository, EfProfileRepository>();
+builder.Services.AddScoped<ICommentRepository, EfCommentRepository>();
+builder.Services.AddScoped<IFollowRepository, EfFollowRepository>();
+builder.Services.AddScoped<ProfileService>();
+builder.Services.AddScoped<CommentService>();
+builder.Services.AddScoped<FollowService>();
 builder.Services.AddDatabaseDeveloperPageExceptionFilter();
 
 builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.RequireConfirmedAccount = false)
