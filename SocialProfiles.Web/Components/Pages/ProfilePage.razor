@@ -1,10 +1,12 @@
 ﻿@page "/u/{Username}"
+@layout ProfileLayout
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Components.Authorization
 @using SocialProfiles.Core.Application.Services
 @using SocialProfiles.Core.Domain.Blocks
 @using SocialProfiles.Core.Domain.Exceptions
 @using SocialProfiles.Core.Domain.Profiles
+@using SocialProfiles.Web.Components.Layout
 @inject ProfileService ProfileService
 @inject FollowService FollowService
 
@@ -12,58 +14,64 @@
 
 @if (_loading)
 {
-    <p>Завантаження...</p>
+    <div class="state-message">
+        <p>Завантаження...</p>
+    </div>
 }
 else if (_profile is null)
 {
-    <h2>Профіль не знайдено</h2>
-    <p>Користувача «@Username» не існує.</p>
+    <div class="state-message">
+        <h2>Профіль не знайдено</h2>
+        <p>Користувача «@Username» не існує.</p>
+    </div>
 }
 else
 {
     <div class="profile-page" style="@_profile.Theme.ToCssVariables()">
-        <header class="profile-header">
-            <div class="avatar">@char.ToUpper(_profile.DisplayName[0])</div>
-            <div>
-                <h1>@_profile.DisplayName</h1>
-                <div class="muted">@@@_profile.Username</div>
-                @if (_isOwner)
-                {
-                    <span class="badge">Це ваш профіль</span>
+        <div class="banner"></div>
 
-                }
-            </div>
-        </header>
+        <div class="profile-content">
+            <header class="profile-header">
+                <div class="avatar">@char.ToUpper(_profile.DisplayName[0])</div>
+                <div class="profile-title">
+                    <h1>@_profile.DisplayName</h1>
+                    <div class="muted">@@@_profile.Username</div>
+                    @if (_isOwner)
+                    {
+                        <span class="badge">Це ваш профіль</span>
+                    }
+                </div>
+            </header>
 
-        @foreach (var block in _profile.Blocks.Where(b => b.IsVisible))
-        {
-            switch (block)
+            @foreach (var block in _profile.Blocks.Where(b => b.IsVisible))
             {
-                case AboutBlock:
-                    <section class="block">
-                        <h2>@block.Title</h2>
-                        <p>@(string.IsNullOrWhiteSpace(_profile.About)
-                            ? "Користувач ще нічого не розповів про себе."
-                            : _profile.About)</p>
-                    </section>
-                    break;
+                switch (block)
+                {
+                    case AboutBlock:
+                        <section class="block">
+                            <h2>@block.Title</h2>
+                            <p>@(string.IsNullOrWhiteSpace(_profile.About)
+                                ? "Користувач ще нічого не розповів про себе."
+                                : _profile.About)</p>
+                        </section>
+                        break;
 
-                case CommentsBlock:
-                    <section class="block">
-                        <h2>@block.Title</h2>
-                        <p class="muted">Коментарі з'являться на наступному кроці.</p>
-                    </section>
-                    break;
+                    case CommentsBlock:
+                        <section class="block">
+                            <h2>@block.Title</h2>
+                            <p class="muted">Коментарі з'являться на наступному кроці.</p>
+                        </section>
+                        break;
 
-                case FollowersBlock:
-                    <section class="block">
-                        <h2>@block.Title</h2>
-                        <p>Підписників: @_followers · Підписок: @_following</p>
-                    </section>
-                    break;
+                    case FollowersBlock:
+                        <section class="block">
+                            <h2>@block.Title</h2>
+                            <p>Підписників: @_followers · Підписок: @_following</p>
+                        </section>
+                        break;
+                }
             }
-        }
-
+        </div>
     </div>
 }
 
