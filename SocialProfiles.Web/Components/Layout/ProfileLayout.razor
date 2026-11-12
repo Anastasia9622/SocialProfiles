@@ -1,0 +1,21 @@
+﻿@inherits LayoutComponentBase
+@using Microsoft.AspNetCore.Components.Authorization
+
+<nav class="top-bar">
+    <a class="brand" href="/">SocialProfiles</a>
+    <div class="links">
+        <AuthorizeView>
+            <Authorized>
+                <a href="/my-profile">Мій профіль</a>
+            </Authorized>
+            <NotAuthorized>
+                <a href="/Account/Login">Вхід</a>
+                <a href="/Account/Register">Реєстрація</a>
+            </NotAuthorized>
+        </AuthorizeView>
+    </div>
+</nav>
+
+<main>
+    @Body
+</main>
