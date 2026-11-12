@@ -1,0 +1,295 @@
+﻿@page "/edit-profile"
+@attribute [Authorize]
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using SocialProfiles.Core.Application.Services
+@using SocialProfiles.Core.Domain.Blocks
+@using SocialProfiles.Core.Domain.Exceptions
+@using SocialProfiles.Core.Domain.Presets
+@using SocialProfiles.Core.Domain.Profiles
+@inject ProfileService ProfileService
+
+<PageTitle>Редактор профілю</PageTitle>
+
+<h1>Редактор профілю</h1>
+
+@if (_loading)
+{
+    <p>Завантаження...</p>
+}
+else if (_profile is null || _previewTheme is null)
+{
+    <div class="alert alert-warning">Для цього облікового запису ще не створено профіль.</div>
+}
+else
+{
+    <div class="editor">
+        <div class="controls">
+            @if (_message is not null)
+            {
+                <div class="alert alert-success" role="status">@_message</div>
+            }
+
+            @if (_error is not null)
+            {
+                <div class="alert alert-danger" role="alert">@_error</div>
+            }
+
+            <section>
+                <h2>Основне</h2>
+                <label for="displayName" class="form-label">Назва профілю</label>
+                <input id="displayName" class="form-control" maxlength="50"
+                       @bind="_displayName" @bind:event="oninput" />
+
+                <label for="about" class="form-label mt-3">Про себе</label>
+                <textarea id="about" class="form-control" rows="5" maxlength="1000"
+                          @bind="_about" @bind:event="oninput"></textarea>
+            </section>
+
+            <section>
+                <h2>Готові теми</h2>
+                <div class="preset-buttons">
+                    @foreach (var preset in PresetCatalog.All)
+                    {
+                        <button type="button" class="btn btn-outline-secondary"
+                                @onclick="() => ApplyPreset(preset)">
+                            @preset.Name
+                        </button>
+                    }
+                </div>
+            </section>
+
+            <section>
+                <h2>Кольори</h2>
+
+
+                <div class="color-row">
+                    <label for="bgColor">Фон сторінки</label>
+                    <input id="bgColor" type="color" class="form-control form-control-color"
+                           @bind="_bg" @bind:event="oninput" @bind:after="RebuildTheme" />
+                </div>
+                <div class="color-row">
+                    <label for="cardColor">Колір карток</label>
+                    <input id="cardColor" type="color" class="form-control form-control-color"
+                           @bind="_card" @bind:event="oninput" @bind:after="RebuildTheme" />
+                </div>
+                <div class="color-row">
+                    <label for="textColor">Колір тексту</label>
+                    <input id="textColor" type="color" class="form-control form-control-color"
+                           @bind="_text" @bind:event="oninput" @bind:after="RebuildTheme" />
+                </div>
+                <div class="color-row">
+                    <label for="accentColor">Акцентний колір</label>
+                    <input id="accentColor" type="color" class="form-control form-control-color"
+                           @bind="_accent" @bind:event="oninput" @bind:after="RebuildTheme" />
+                </div>
+
+                @if (_themeError is not null)
+                {
+                    <div class="alert alert-danger" role="alert">
+                        @_themeError Попередній перегляд показує останню коректну тему.
+                    </div>
+                }
+                else
+                {
+                    <p class="contrast-info">
+                        Контраст тексту й фону: @_previewTheme.ContrastRatio().ToString("0.0")
+                        (потрібно не менше 4.5)
+
+                    </p>
+                }
+            </section>
+
+            <section>
+                <h2>Порядок блоків</h2>
+                <ul class="block-list">
+                    @for (int i = 0; i < _profile.Blocks.Count; i++)
+                    {
+                        var block = _profile.Blocks[i];
+                        var index = i;
+                        <li>
+                            <span>@block.Title</span>
+                            <span>
+                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                        aria-label="Підняти блок «@block.Title» вгору"
+                                        disabled="@(index == 0)"
+                                        @onclick="() => MoveAsync(block.Id, true)">↑</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary"
+                                        aria-label="Опустити блок «@block.Title» вниз"
+                                        disabled="@(index == _profile.Blocks.Count - 1)"
+                                        @onclick="() => MoveAsync(block.Id, false)">↓</button>
+                            </span>
+                        </li>
+                    }
+                </ul>
+                <p class="muted-note">Порядок блоків зберігається одразу.</p>
+            </section>
+
+            <div class="actions">
+                <button type="button" class="btn btn-primary"
+                        disabled="@(_themeError is not null)"
+
+                        @onclick="SaveAsync">Зберегти</button>
+                <button type="button" class="btn btn-outline-secondary"
+                        @onclick="LoadAsync">Скасувати зміни</button>
+                <a class="btn btn-link" href="/u/@_profile.Username">Переглянути профіль</a>
+            </div>
+        </div>
+
+        <div class="preview" style="@_previewTheme.ToCssVariables()">
+            <div class="preview-banner"></div>
+            <div class="preview-body">
+                <div class="preview-avatar">@Initial</div>
+                <h3>@(string.IsNullOrWhiteSpace(_displayName) ? "Назва профілю" : _displayName.Trim())</h3>
+                <div class="preview-muted">@@@_profile.Username</div>
+
+                @foreach (var block in _profile.Blocks.Where(b => b.IsVisible))
+                {
+                    <div class="preview-block">
+                        <h4>@block.Title</h4>
+                        @if (block is AboutBlock)
+                        {
+                            <p>@(string.IsNullOrWhiteSpace(_about) ? "Тут буде текст про вас." : _about)</p>
+                        }
+                        else
+                        {
+                            <p class="preview-muted">Тут відображатиметься вміст блоку.</p>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}
+
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    private string? _userId;
+    private Profile? _profile;
+    private bool _loading = true;
+
+    private string _displayName = "";
+    private string _about = "";
+    private string _bg = "#000000";
+    private string _card = "#000000";
+    private string _text = "#ffffff";
+    private string _accent = "#ffffff";
+
+    private Theme? _previewTheme;
+    private string? _themeError;
+    private string? _message;
+    private string? _error;
+
+    private string Initial =>
+        string.IsNullOrWhiteSpace(_displayName) ? "?" : char.ToUpper(_displayName.Trim()[0]).ToString();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthState!;
+        _userId = state.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+
+        _message = null;
+        _error = null;
+
+        if (_userId is null)
+        {
+            _loading = false;
+            return;
+        }
+
+        try
+        {
+            _profile = await ProfileService.GetByUserIdAsync(_userId);
+        }
+        catch (DomainException)
+        {
+            _profile = null;
+            _loading = false;
+            return;
+        }
+
+        _displayName = _profile.DisplayName;
+        _about = _profile.About;
+        _bg = _profile.Theme.BackgroundColor;
+        _card = _profile.Theme.CardColor;
+        _text = _profile.Theme.TextColor;
+        _accent = _profile.Theme.AccentColor;
+        RebuildTheme();
+
+        _loading = false;
+    }
+
+    // Пробуємо зібрати тему з обраних кольорів. Правила перевіряє сам Theme.
+
+    private void RebuildTheme()
+    {
+        try
+        {
+            _previewTheme = new Theme(_bg, _card, _text, _accent);
+            _themeError = null;
+        }
+        catch (DomainException ex)
+        {
+            // _previewTheme лишається останньою коректною темою.
+            _themeError = ex.Message;
+        }
+    }
+
+    private void ApplyPreset(ThemePreset preset)
+    {
+        var theme = preset.CreateTheme();
+        _bg = theme.BackgroundColor;
+        _card = theme.CardColor;
+        _text = theme.TextColor;
+        _accent = theme.AccentColor;
+        RebuildTheme();
+        _message = null;
+        _error = null;
+    }
+
+    private async Task SaveAsync()
+    {
+        _message = null;
+        _error = null;
+
+        if (_previewTheme is null || _themeError is not null)
+
+            return;
+
+        try
+        {
+            await ProfileService.UpdateInfoAsync(_userId!, _displayName, _about);
+            await ProfileService.ChangeThemeAsync(_userId!, _previewTheme);
+            _message = "Зміни збережено.";
+        }
+        catch (DomainException ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private async Task MoveAsync(Guid blockId, bool up)
+    {
+        _message = null;
+        _error = null;
+
+        try
+        {
+            await ProfileService.MoveBlockAsync(_userId!, blockId, up);
+            _profile = await ProfileService.GetByUserIdAsync(_userId!);
+            _message = "Порядок блоків збережено.";
+        }
+        catch (DomainException ex)
+        {
+            _error = ex.Message;
+        }
+    }
+}
