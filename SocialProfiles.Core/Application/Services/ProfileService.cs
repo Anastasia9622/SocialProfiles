@@ -61,8 +61,10 @@ public class ProfileService
         await _profiles.SaveAsync(profile);
     }
 
-    private async Task<Profile> GetByUserIdAsync(string userId) =>
-        await _profiles.GetByUserIdAsync(userId)
+    public async Task<Profile> GetByUserIdAsync(string userId) =>
+    await _profiles.GetByUserIdAsync(userId)
+    ?? throw new DomainException("Профіль не знайдено.");
 
-        ?? throw new DomainException("Профіль не знайдено.");
+    public async Task<bool> IsUsernameAvailableAsync(string username) =>
+        !await _profiles.UsernameExistsAsync(username);
 }
