@@ -69,4 +69,51 @@ public class ProfileServiceTests
         await Assert.ThrowsAsync<DomainException>(() =>
             _service.UpdateInfoAsync("ghost", "Ім'я", "Про мене"));
     }
+
+    [Fact]
+    public async Task IsUsernameAvailableAsync_FreeName_ReturnsTrue()
+    {
+        // Сховище порожнє, тому будь-яке ім'я вільне.
+        bool available = await _service.IsUsernameAvailableAsync("anastasia");
+
+        Assert.True(available);
+    }
+
+    [Fact]
+    public async Task IsUsernameAvailableAsync_TakenName_ReturnsFalse()
+    {
+        await _service.CreateAsync("user-1", "anastasia", "Анастасія");
+
+        bool available = await _service.IsUsernameAvailableAsync("anastasia");
+
+        Assert.False(available);
+    }
+
+    [Fact]
+    public async Task IsUsernameAvailableAsync_TakenNameInDifferentCase_ReturnsFalse()
+    {
+        await _service.CreateAsync("user-1", "anastasia", "Анастасія");
+
+        bool available = await _service.IsUsernameAvailableAsync("ANASTASIA");
+
+        Assert.False(available);
+    }
+
+    [Fact]
+    public async Task GetByUserIdAsync_ExistingUser_ReturnsProfile()
+    {
+
+        await _service.CreateAsync("user-1", "anastasia", "Анастасія");
+
+        var profile = await _service.GetByUserIdAsync("user-1");
+
+        Assert.Equal("anastasia", profile.Username);
+        Assert.Equal("user-1", profile.UserId);
+    }
+
+    [Fact]
+    public async Task GetByUserIdAsync_UnknownUser_Throws()
+    {
+        await Assert.ThrowsAsync<DomainException>(() => _service.GetByUserIdAsync("ghost"));
+    }
 }
