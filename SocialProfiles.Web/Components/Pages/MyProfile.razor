@@ -1,0 +1,38 @@
+﻿@page "/my-profile"
+@attribute [Authorize]
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using SocialProfiles.Core.Application.Services
+@using SocialProfiles.Core.Domain.Exceptions
+@inject ProfileService ProfileService
+@inject NavigationManager Navigation
+
+@if (_notFound)
+{
+    <h2>Профіль не знайдено</h2>
+    <p>Для цього облікового запису ще не створено профіль.</p>
+}
+
+@code {
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    private bool _notFound;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthState!;
+        var userId = state.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        try
+        {
+            var profile = await ProfileService.GetByUserIdAsync(userId!);
+            Navigation.NavigateTo($"/u/{profile.Username}", replace: true);
+        }
+        catch (DomainException)
+
+        {
+            _notFound = true;
+        }
+    }
+}

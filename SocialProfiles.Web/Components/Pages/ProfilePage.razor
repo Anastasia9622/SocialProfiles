@@ -1,0 +1,114 @@
+﻿@page "/u/{Username}"
+@using System.Security.Claims
+@using Microsoft.AspNetCore.Components.Authorization
+@using SocialProfiles.Core.Application.Services
+@using SocialProfiles.Core.Domain.Blocks
+@using SocialProfiles.Core.Domain.Exceptions
+@using SocialProfiles.Core.Domain.Profiles
+@inject ProfileService ProfileService
+@inject FollowService FollowService
+
+<PageTitle>@(_profile?.DisplayName ?? "Профіль")</PageTitle>
+
+@if (_loading)
+{
+    <p>Завантаження...</p>
+}
+else if (_profile is null)
+{
+    <h2>Профіль не знайдено</h2>
+    <p>Користувача «@Username» не існує.</p>
+}
+else
+{
+    <div class="profile-page" style="@_profile.Theme.ToCssVariables()">
+        <header class="profile-header">
+            <div class="avatar">@char.ToUpper(_profile.DisplayName[0])</div>
+            <div>
+                <h1>@_profile.DisplayName</h1>
+                <div class="muted">@@@_profile.Username</div>
+                @if (_isOwner)
+                {
+                    <span class="badge">Це ваш профіль</span>
+
+                }
+            </div>
+        </header>
+
+        @foreach (var block in _profile.Blocks.Where(b => b.IsVisible))
+        {
+            switch (block)
+            {
+                case AboutBlock:
+                    <section class="block">
+                        <h2>@block.Title</h2>
+                        <p>@(string.IsNullOrWhiteSpace(_profile.About)
+                            ? "Користувач ще нічого не розповів про себе."
+                            : _profile.About)</p>
+                    </section>
+                    break;
+
+                case CommentsBlock:
+                    <section class="block">
+                        <h2>@block.Title</h2>
+                        <p class="muted">Коментарі з'являться на наступному кроці.</p>
+                    </section>
+                    break;
+
+                case FollowersBlock:
+                    <section class="block">
+                        <h2>@block.Title</h2>
+                        <p>Підписників: @_followers · Підписок: @_following</p>
+                    </section>
+                    break;
+            }
+        }
+
+    </div>
+}
+
+@code {
+    [Parameter] public string Username { get; set; } = "";
+
+    [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
+
+    private Profile? _profile;
+    private bool _loading = true;
+    private bool _isOwner;
+    private int _followers;
+    private int _following;
+
+    protected override async Task OnParametersSetAsync()
+    {
+         Console.WriteLine($"OnParametersSetAsync: {DateTime.Now:HH:mm:ss.fff}");
+        _loading = true;
+        _profile = null;
+        _isOwner = false;
+
+        try
+        {
+            _profile = await ProfileService.GetByUsernameAsync(Username);
+        }
+        catch (DomainException)
+        {
+            _loading = false;
+            return;
+        }
+
+        var currentUserId = await GetCurrentUserIdAsync();
+        _isOwner = currentUserId == _profile.UserId;
+
+        _followers = await FollowService.CountFollowersAsync(_profile.UserId);
+        _following = await FollowService.CountFollowingAsync(_profile.UserId);
+        _loading = false;
+    }
+
+    private async Task<string?> GetCurrentUserIdAsync()
+    {
+        if (AuthState is null)
+            return null;
+
+        var state = await AuthState;
+        return state.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    }
+}
