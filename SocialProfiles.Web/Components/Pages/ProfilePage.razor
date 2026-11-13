@@ -1,14 +1,15 @@
 ﻿@page "/u/{Username}"
-@layout ProfileLayout
+@layout Layout.ProfileLayout
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Components.Authorization
 @using SocialProfiles.Core.Application.Services
 @using SocialProfiles.Core.Domain.Blocks
 @using SocialProfiles.Core.Domain.Exceptions
 @using SocialProfiles.Core.Domain.Profiles
-@using SocialProfiles.Web.Components.Layout
+@using SocialProfiles.Core.Domain.Social
 @inject ProfileService ProfileService
 @inject FollowService FollowService
+@inject CommentService CommentService
 
 <PageTitle>@(_profile?.DisplayName ?? "Профіль")</PageTitle>
 
@@ -30,21 +31,39 @@ else
     <div class="profile-page" style="@_profile.Theme.ToCssVariables()">
         <div class="banner"></div>
 
+
         <div class="profile-content">
             <header class="profile-header">
                 <div class="avatar">@char.ToUpper(_profile.DisplayName[0])</div>
                 <div class="profile-title">
                     <h1>@_profile.DisplayName</h1>
                     <div class="muted">@@@_profile.Username</div>
+
                     @if (_isOwner)
                     {
                         <span class="badge">Це ваш профіль</span>
                         <a class="edit-link" href="/edit-profile">Редагувати профіль</a>
                     }
+                    else if (_currentUserId is not null)
+                    {
+                        <button type="button" class="action-button" disabled="@_busy" @onclick="ToggleFollowAsync">
+                            @(_isFollowing ? "Відписатися" : "Підписатися")
+                        </button>
+                    }
+                    else
+                    {
+                        <a class="edit-link" href="/Account/Login">Увійдіть, щоб підписатися</a>
+                    }
+
+                    @if (_followError is not null)
+                    {
+                        <div class="form-error" role="alert">@_followError</div>
+                    }
                 </div>
             </header>
 
             @foreach (var block in _profile.Blocks.Where(b => b.IsVisible))
+
             {
                 switch (block)
                 {
@@ -60,7 +79,106 @@ else
                     case CommentsBlock:
                         <section class="block">
                             <h2>@block.Title</h2>
-                            <p class="muted">Коментарі з'являться на наступному кроці.</p>
+
+                            @if (_commentError is not null)
+                            {
+                                <div class="form-error" role="alert">@_commentError</div>
+                            }
+
+                            @if (_currentUserId is not null)
+                            {
+                                <div class="comment-form">
+                                    <label for="newComment" class="visually-hidden">Новий коментар</label>
+                                    <textarea id="newComment" rows="3" maxlength="500"
+                                              placeholder="Напишіть коментар..."
+                                              @bind="_newComment" @bind:event="oninput"></textarea>
+                                    <button type="button" class="action-button" @onclick="AddCommentAsync">Надіслати</button>
+                                </div>
+                            }
+                            else
+
+                            {
+                                <p class="muted"><a class="author-link" href="/Account/Login">Увійдіть</a>, щоб залишити коментар.</p>
+                            }
+
+                            @if (_topLevel.Count == 0)
+                            {
+                                <p class="muted">Поки що коментарів немає.</p>
+                            }
+
+                            @foreach (var comment in _topLevel)
+                            {
+                                var author = Author(comment.AuthorId);
+
+                                <article class="comment">
+                                    <div class="comment-head">
+                                        @if (author is not null)
+                                        {
+                                            <a class="author-link" href="/u/@author.Username">@author.DisplayName</a>
+                                        }
+                                        else
+                                        {
+                                            <strong>Користувач</strong>
+                                        }
+                                        <span class="muted">@comment.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</span>
+                                    </div>
+
+                                    <p class="comment-text">@comment.Text</p>
+
+                                    <div class="comment-actions">
+                                        @if (_currentUserId is not null)
+                                        {
+                                            <button type="button" class="link-button" @onclick="() => StartReply(comment.Id)">Відповісти</button>
+
+                                        }
+                                        @if (comment.CanBeDeletedBy(_currentUserId ?? "", _profile.UserId))
+                                        {
+                                            <button type="button" class="link-button" @onclick="() => DeleteCommentAsync(comment.Id)">Видалити</button>
+                                        }
+                                    </div>
+
+                                    @if (_replyToId == comment.Id)
+                                    {
+                                        <div class="comment-form reply-form">
+                                            <label for="reply-@comment.Id" class="visually-hidden">Ваша відповідь</label>
+                                            <textarea id="reply-@comment.Id" rows="2" maxlength="500"
+                                                      placeholder="Ваша відповідь..."
+                                                      @bind="_replyText" @bind:event="oninput"></textarea>
+                                            <button type="button" class="action-button" @onclick="SendReplyAsync">Надіслати</button>
+                                            <button type="button" class="link-button" @onclick="CancelReply">Скасувати</button>
+                                        </div>
+                                    }
+
+                                    @foreach (var reply in RepliesOf(comment.Id))
+                                    {
+                                        var replyAuthor = Author(reply.AuthorId);
+
+                                        <div class="reply">
+                                            <div class="comment-head">
+                                                @if (replyAuthor is not null)
+                                                {
+                                                    <a class="author-link" href="/u/@replyAuthor.Username">@replyAuthor.DisplayName</a>
+                                                }
+                                                else
+                                                {
+                                                    <strong>Користувач</strong>
+
+                                                }
+                                                <span class="muted">@reply.CreatedAt.ToLocalTime().ToString("dd.MM.yyyy HH:mm")</span>
+                                            </div>
+
+                                            <p class="comment-text">@reply.Text</p>
+
+                                            @if (reply.CanBeDeletedBy(_currentUserId ?? "", _profile.UserId))
+                                            {
+                                                <div class="comment-actions">
+                                                    <button type="button" class="link-button" @onclick="() => DeleteCommentAsync(reply.Id)">Видалити</button>
+                                                </div>
+                                            }
+                                        </div>
+                                    }
+                                </article>
+                            }
                         </section>
                         break;
 
@@ -77,6 +195,7 @@ else
 }
 
 @code {
+
     [Parameter] public string Username { get; set; } = "";
 
     [CascadingParameter] private Task<AuthenticationState>? AuthState { get; set; }
@@ -84,15 +203,34 @@ else
     private Profile? _profile;
     private bool _loading = true;
     private bool _isOwner;
+    private string? _currentUserId;
+
     private int _followers;
     private int _following;
+    private bool _isFollowing;
+    private bool _busy;
+    private string? _followError;
+
+    private List<Comment> _topLevel = new();
+    private Dictionary<Guid, List<Comment>> _replies = new();
+    private Dictionary<string, Profile> _authors = new();
+    private string _newComment = "";
+    private Guid? _replyToId;
+    private string _replyText = "";
+    private string? _commentError;
 
     protected override async Task OnParametersSetAsync()
     {
-         Console.WriteLine($"OnParametersSetAsync: {DateTime.Now:HH:mm:ss.fff}");
         _loading = true;
         _profile = null;
         _isOwner = false;
+        _isFollowing = false;
+        _followError = null;
+        _commentError = null;
+        _newComment = "";
+
+        _replyToId = null;
+        _replyText = "";
 
         try
         {
@@ -104,11 +242,15 @@ else
             return;
         }
 
-        var currentUserId = await GetCurrentUserIdAsync();
-        _isOwner = currentUserId == _profile.UserId;
+        _currentUserId = await GetCurrentUserIdAsync();
+        _isOwner = _currentUserId == _profile.UserId;
 
-        _followers = await FollowService.CountFollowersAsync(_profile.UserId);
-        _following = await FollowService.CountFollowingAsync(_profile.UserId);
+        await LoadCountsAsync();
+
+        if (_currentUserId is not null && !_isOwner)
+            _isFollowing = await FollowService.IsFollowingAsync(_currentUserId, _profile.UserId);
+
+        await LoadWallAsync();
         _loading = false;
     }
 
@@ -119,5 +261,120 @@ else
 
         var state = await AuthState;
         return state.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+    }
+
+    private async Task LoadCountsAsync()
+    {
+        _followers = await FollowService.CountFollowersAsync(_profile!.UserId);
+        _following = await FollowService.CountFollowingAsync(_profile.UserId);
+    }
+
+    private async Task LoadWallAsync()
+    {
+        var all = await CommentService.GetWallAsync(_profile!.Id);
+
+        _topLevel = all.Where(c => !c.IsReply)
+                       .OrderByDescending(c => c.CreatedAt)
+                       .ToList();
+
+        _replies = all.Where(c => c.IsReply)
+                      .GroupBy(c => c.ParentCommentId!.Value)
+                      .ToDictionary(g => g.Key, g => g.OrderBy(c => c.CreatedAt).ToList());
+
+        _authors = await ProfileService.GetProfilesByUserIdsAsync(all.Select(c => c.AuthorId));
+    }
+
+    private Profile? Author(string authorId) => _authors.GetValueOrDefault(authorId);
+
+    private List<Comment> RepliesOf(Guid commentId) =>
+        _replies.TryGetValue(commentId, out var list) ? list : new List<Comment>();
+
+    private async Task ToggleFollowAsync()
+    {
+        _followError = null;
+        _busy = true;
+
+
+        try
+        {
+            if (_isFollowing)
+                await FollowService.UnfollowAsync(_currentUserId!, _profile!.UserId);
+            else
+                await FollowService.FollowAsync(_currentUserId!, _profile!.UserId);
+
+            _isFollowing = await FollowService.IsFollowingAsync(_currentUserId!, _profile.UserId);
+            await LoadCountsAsync();
+        }
+        catch (DomainException ex)
+        {
+            _followError = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task AddCommentAsync()
+    {
+        _commentError = null;
+
+        try
+        {
+            await CommentService.AddAsync(_profile!.Id, _currentUserId!, _newComment);
+            _newComment = "";
+            await LoadWallAsync();
+        }
+        catch (DomainException ex)
+
+        {
+            _commentError = ex.Message;
+        }
+    }
+
+    private void StartReply(Guid commentId)
+    {
+        _commentError = null;
+        _replyToId = commentId;
+        _replyText = "";
+    }
+
+    private void CancelReply()
+    {
+        _replyToId = null;
+        _replyText = "";
+    }
+
+    private async Task SendReplyAsync()
+    {
+        _commentError = null;
+
+        try
+        {
+            await CommentService.ReplyAsync(_replyToId!.Value, _currentUserId!, _replyText);
+            CancelReply();
+            await LoadWallAsync();
+        }
+        catch (DomainException ex)
+        {
+            _commentError = ex.Message;
+        }
+
+    }
+
+    private async Task DeleteCommentAsync(Guid commentId)
+    {
+        _commentError = null;
+
+        try
+        {
+            await CommentService.DeleteAsync(commentId, _currentUserId!);
+            await LoadWallAsync();
+        }
+        catch (DomainException ex)
+        {
+            _commentError = ex.Message;
+        }
     }
 }
