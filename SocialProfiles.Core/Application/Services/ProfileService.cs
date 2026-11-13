@@ -27,6 +27,20 @@ public class ProfileService
         return profile;
     }
 
+    public async Task<Dictionary<string, Profile>> GetProfilesByUserIdsAsync(IEnumerable<string> userIds)
+    {
+        var result = new Dictionary<string, Profile>();
+
+        foreach (var id in userIds.Distinct())
+        {
+            var profile = await _profiles.GetByUserIdAsync(id);
+            if (profile is not null)
+                result[id] = profile;
+        }
+
+        return result;
+    }
+
     public async Task<Profile> GetByUsernameAsync(string username) =>
         await _profiles.GetByUsernameAsync(username)
         ?? throw new DomainException("Профіль не знайдено.");
@@ -67,4 +81,6 @@ public class ProfileService
 
     public async Task<bool> IsUsernameAvailableAsync(string username) =>
         !await _profiles.UsernameExistsAsync(username);
+
+
 }

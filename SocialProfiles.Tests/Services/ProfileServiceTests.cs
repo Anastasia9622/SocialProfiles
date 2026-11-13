@@ -1,4 +1,5 @@
 ﻿using SocialProfiles.Core.Application.Services;
+using SocialProfiles.Core.Domain.Blocks;
 using SocialProfiles.Core.Domain.Exceptions;
 using SocialProfiles.Core.Domain.Presets;
 using SocialProfiles.Tests.Fakes;
@@ -115,5 +116,43 @@ public class ProfileServiceTests
     public async Task GetByUserIdAsync_UnknownUser_Throws()
     {
         await Assert.ThrowsAsync<DomainException>(() => _service.GetByUserIdAsync("ghost"));
+    }
+
+    [Fact]
+    public async Task MoveBlockAsync_Down_ChangesOrderAndSaves()
+    {
+        var profile = await _service.CreateAsync("user-1", "anastasia", "Анастасія");
+        var firstId = profile.Blocks[0].Id;
+
+        await _service.MoveBlockAsync("user-1", firstId, up: false);
+
+        Assert.Equal(firstId, profile.Blocks[1].Id);
+        Assert.Equal(1, _repo.SaveCount);
+    }
+
+    [Fact]
+    public async Task MoveBlockAsync_Up_ChangesOrderAndSaves()
+    {
+        var profile = await _service.CreateAsync("user-1", "anastasia", "Анастасія");
+        var lastId = profile.Blocks[2].Id;
+
+        await _service.MoveBlockAsync("user-1", lastId, up: true);
+
+        Assert.IsType<CommentsBlock>(profile.Blocks[2]);
+        Assert.Equal(lastId, profile.Blocks[1].Id);
+        Assert.Equal(1, _repo.SaveCount);
+    }
+
+    [Fact]
+    public async Task GetProfilesByUserIdsAsync_ReturnsKnownProfilesOnly()
+    {
+        await _service.CreateAsync("user-1", "first", "Перша");
+        await _service.CreateAsync("user-2", "second", "Друга");
+
+        var result = await _service.GetProfilesByUserIdsAsync(new[] { "user-1", "user-2", "user-1", "ghost" });
+
+        Assert.Equal(2, result.Count);
+        Assert.Equal("first", result["user-1"].Username);
+        Assert.False(result.ContainsKey("ghost"));
     }
 }
