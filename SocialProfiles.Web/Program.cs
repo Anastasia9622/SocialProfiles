@@ -1,12 +1,14 @@
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using SocialProfiles.Core.Application.Interfaces;
 using SocialProfiles.Core.Application.Services;
 using SocialProfiles.Web.Components;
 using SocialProfiles.Web.Components.Account;
 using SocialProfiles.Web.Data;
 using SocialProfiles.Web.Data.Repositories;
+using SocialProfiles.Core.Domain.Media;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -51,6 +53,12 @@ builder.Services.AddIdentityCore<ApplicationUser>(options => options.SignIn.Requ
 
 builder.Services.AddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
 
+var uploadsPath = builder.Configuration["Storage:UploadsPath"]
+    ?? Path.Combine(builder.Environment.ContentRootPath, "App_Data", "uploads");
+
+builder.Services.AddSingleton<IImageStorage>(new LocalImageStorage(uploadsPath));
+builder.Services.AddScoped<ProfileImageService>();
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -61,19 +69,30 @@ if (app.Environment.IsDevelopment())
 else
 {
     app.UseExceptionHandler("/Error", createScopeForErrors: true);
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
 }
 
 app.UseHttpsRedirection();
 
 app.UseStaticFiles();
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(uploadsPath),
+    RequestPath = "/uploads",
+    OnPrepareResponse = ctx =>
+    {
+
+        ctx.Context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+        ctx.Context.Response.Headers["Cache-Control"] = "public,max-age=604800";
+    }
+});
+
 app.UseAntiforgery();
 
 app.MapRazorComponents<App>()
     .AddInteractiveServerRenderMode();
 
-// Add additional endpoints required by the Identity /Account Razor components.
 app.MapAdditionalIdentityEndpoints();
 
 app.Run();

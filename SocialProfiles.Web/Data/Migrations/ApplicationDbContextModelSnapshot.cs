@@ -189,6 +189,10 @@ namespace SocialProfiles.Web.Migrations
                         .HasMaxLength(300)
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("BackgroundImagePath")
+                        .HasMaxLength(300)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("BannerPath")
                         .HasMaxLength(300)
                         .HasColumnType("TEXT");
