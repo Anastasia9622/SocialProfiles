@@ -2,6 +2,7 @@
 using SocialProfiles.Core.Domain.Exceptions;
 using SocialProfiles.Core.Domain.Presets;
 using SocialProfiles.Core.Domain.Profiles;
+using SocialProfiles.Core.Domain.Media;
 
 namespace SocialProfiles.Tests.Domain;
 
@@ -135,5 +136,29 @@ public class ProfileTests
         var profile = CreateProfile();
 
         Assert.Throws<DomainException>(() => profile.ChangeTheme(null!));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("http://evil.example/x.png")]
+    [InlineData("/uploads/../secret.png")]
+    public void SetImage_InvalidPath_Throws(string path)
+    {
+        var profile = CreateProfile();
+
+        Assert.Throws<DomainException>(() => profile.SetImage(ImageKind.Avatar, path));
+    }
+
+    [Fact]
+    public void SetImage_ThenRemove_ChangesPath()
+    {
+        var profile = CreateProfile();
+        const string path = "/uploads/0123456789abcdef0123456789abcdef.png";
+
+        profile.SetImage(ImageKind.Banner, path);
+        Assert.Equal(path, profile.BannerPath);
+
+        profile.RemoveImage(ImageKind.Banner);
+        Assert.Null(profile.BannerPath);
     }
 }

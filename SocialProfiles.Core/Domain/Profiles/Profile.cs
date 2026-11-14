@@ -1,6 +1,7 @@
 ﻿using System.Text.RegularExpressions;
 using SocialProfiles.Core.Domain.Blocks;
 using SocialProfiles.Core.Domain.Exceptions;
+using SocialProfiles.Core.Domain.Media;
 
 namespace SocialProfiles.Core.Domain.Profiles;
 
@@ -51,20 +52,32 @@ public class Profile
     public void ChangeTheme(Theme theme) =>
         Theme = theme ?? throw new DomainException("Тема не може бути порожньою.");
 
-    public void SetAvatar(string path)
+    public string? BackgroundImagePath { get; private set; }
+
+    public string? GetImagePath(ImageKind kind) => kind switch
     {
-        if (string.IsNullOrWhiteSpace(path))
-            throw new DomainException("Не вказано шлях до аватарки.");
-        AvatarPath = path;
+        ImageKind.Avatar => AvatarPath,
+        ImageKind.Banner => BannerPath,
+        ImageKind.Background => BackgroundImagePath,
+        _ => throw new DomainException("Невідомий тип зображення.")
+    };
+
+    public void SetImage(ImageKind kind, string? path)
+    {
+        // Шлях потрапляє в CSS і в src, тому приймаємо лише шляхи, створені нашим сховищем.
+        if (path is not null && !ImageUpload.IsValidPublicPath(path))
+            throw new DomainException("Некоректний шлях до зображення.");
+
+        switch (kind)
+        {
+            case ImageKind.Avatar: AvatarPath = path; break;
+            case ImageKind.Banner: BannerPath = path; break;
+            case ImageKind.Background: BackgroundImagePath = path; break;
+            default: throw new DomainException("Невідомий тип зображення.");
+        }
     }
 
-    public void SetBanner(string path)
-    {
-        if (string.IsNullOrWhiteSpace(path))
-            throw new DomainException("Не вказано шлях до банера.");
-        BannerPath = path;
-
-    }
+    public void RemoveImage(ImageKind kind) => SetImage(kind, null);
 
     public void AddBlock(ProfileBlock block)
     {
