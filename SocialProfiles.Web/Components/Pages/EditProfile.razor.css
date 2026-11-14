@@ -67,11 +67,16 @@
     background-color: var(--bg-color);
     color: var(--text-color);
     min-height: 420px;
+    background-image: var(--bg-image, none);
+    background-size: cover;
+    background-position: center;
 }
 
 .preview-banner {
     height: 100px;
     background: linear-gradient(135deg, var(--accent-color), var(--card-color));
+    background-size: cover;
+    background-position: center;
 }
 
 .preview-body {
@@ -92,6 +97,9 @@
     font-weight: 700;
 }
 
+img.preview-avatar {
+    object-fit: cover;
+}
 .preview-body h3 {
     margin: 10px 0 0;
 }

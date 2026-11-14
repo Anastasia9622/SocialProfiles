@@ -1,0 +1,12 @@
+﻿.image-uploader {
+    margin-bottom: 20px;
+}
+
+.thumb {
+    display: block;
+    max-width: 100%;
+    max-height: 120px;
+    margin-bottom: 8px;
+    border-radius: 8px;
+    object-fit: cover;
+}

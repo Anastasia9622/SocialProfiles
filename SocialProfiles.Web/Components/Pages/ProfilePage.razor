@@ -7,6 +7,7 @@
 @using SocialProfiles.Core.Domain.Exceptions
 @using SocialProfiles.Core.Domain.Profiles
 @using SocialProfiles.Core.Domain.Social
+@using Microsoft.AspNetCore.Components.Web
 @inject ProfileService ProfileService
 @inject FollowService FollowService
 @inject CommentService CommentService
@@ -26,15 +27,22 @@ else if (_profile is null)
         <p>Користувача «@Username» не існує.</p>
     </div>
 }
-else
+else 
 {
-    <div class="profile-page" style="@_profile.Theme.ToCssVariables()">
-        <div class="banner"></div>
+    <div class="profile-page" style="@PageStyle">
+        <div class="banner" style="@BannerStyle"></div>
 
 
         <div class="profile-content">
             <header class="profile-header">
-                <div class="avatar">@char.ToUpper(_profile.DisplayName[0])</div>
+                @if (_profile.AvatarPath is not null)
+                {
+                    <img class="avatar" src="@_profile.AvatarPath" alt="Аватарка @_profile.DisplayName" />
+                }
+                else
+                {
+                    <div class="avatar">@char.ToUpper(_profile.DisplayName[0])</div>
+                }
                 <div class="profile-title">
                     <h1>@_profile.DisplayName</h1>
                     <div class="muted">@@@_profile.Username</div>
@@ -377,4 +385,11 @@ else
             _commentError = ex.Message;
         }
     }
+    private string PageStyle =>
+        _profile is null ? "" :
+        _profile.Theme.ToCssVariables() +
+        (_profile.BackgroundImagePath is null ? "" : $";--bg-image:url('{_profile.BackgroundImagePath}')");
+
+    private string? BannerStyle =>
+        _profile?.BannerPath is null ? null : $"background-image:url('{_profile.BannerPath}')";
 }

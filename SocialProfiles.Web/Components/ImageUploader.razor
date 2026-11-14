@@ -1,0 +1,98 @@
+﻿@using Microsoft.AspNetCore.Components.Forms
+@using SocialProfiles.Core.Application.Services
+@using SocialProfiles.Core.Domain.Exceptions
+@using SocialProfiles.Core.Domain.Media
+@inject ProfileImageService Images
+
+<div class="image-uploader">
+    <h3>@Title</h3>
+
+    @if (CurrentPath is not null)
+    {
+        <img src="@CurrentPath" alt="@Title" class="thumb" />
+    }
+    else
+    {
+        <p class="muted-note">Не вибрано</p>
+    }
+
+    <label for="@_inputId" class="form-label">PNG, JPG, GIF або WebP, до @MaxMb МБ</label>
+    <InputFile id="@_inputId" class="form-control" OnChange="OnFileSelected"
+               accept="image/png,image/jpeg,image/gif,image/webp" disabled="@_busy" />
+
+    @if (CurrentPath is not null)
+    {
+        <button type="button" class="btn btn-sm btn-outline-danger mt-2"
+                disabled="@_busy" @onclick="RemoveAsync">Видалити</button>
+    }
+
+    @if (_busy)
+    {
+        <p class="muted-note">Завантаження...</p>
+    }
+    @if (_error is not null)
+
+    {
+        <div class="alert alert-danger mt-2" role="alert">@_error</div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired] public string UserId { get; set; } = "";
+    [Parameter, EditorRequired] public ImageKind Kind { get; set; }
+    [Parameter, EditorRequired] public string Title { get; set; } = "";
+    [Parameter] public string? CurrentPath { get; set; }
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private readonly string _inputId = $"upload-{Guid.NewGuid():N}";
+    private bool _busy;
+    private string? _error;
+
+    private long MaxMb => ImageUpload.MaxBytes(Kind) / (1024 * 1024);
+
+    private async Task OnFileSelected(InputFileChangeEventArgs e)
+    {
+        _error = null;
+        _busy = true;
+
+        try
+        {
+            await using var stream = e.File.OpenReadStream(ImageUpload.MaxBytes(Kind));
+            await Images.UploadAsync(UserId, Kind, stream);
+            await OnChanged.InvokeAsync();
+        }
+        catch (DomainException ex)
+        {
+            _error = ex.Message;
+
+        }
+        catch (IOException)
+        {
+            _error = $"Файл завеликий. Максимум {MaxMb} МБ.";
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+
+    private async Task RemoveAsync()
+    {
+        _error = null;
+        _busy = true;
+
+        try
+        {
+            await Images.RemoveAsync(UserId, Kind);
+            await OnChanged.InvokeAsync();
+        }
+        catch (DomainException ex)
+        {
+            _error = ex.Message;
+        }
+        finally
+        {
+            _busy = false;
+        }
+    }
+}

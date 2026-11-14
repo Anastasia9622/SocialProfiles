@@ -3,11 +3,14 @@
 @using System.Security.Claims
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Web
 @using SocialProfiles.Core.Application.Services
 @using SocialProfiles.Core.Domain.Blocks
 @using SocialProfiles.Core.Domain.Exceptions
 @using SocialProfiles.Core.Domain.Presets
 @using SocialProfiles.Core.Domain.Profiles
+@using SocialProfiles.Core.Domain.Media
+@using SocialProfiles.Web.Components
 @inject ProfileService ProfileService
 
 <PageTitle>Редактор профілю</PageTitle>
@@ -46,7 +49,15 @@ else
                 <textarea id="about" class="form-control" rows="5" maxlength="1000"
                           @bind="_about" @bind:event="oninput"></textarea>
             </section>
-
+            <section>
+                <h2>Зображення</h2>
+                <ImageUploader UserId="@(_userId ?? string.Empty)" Kind="ImageKind.Avatar" Title="Аватарка"
+                            CurrentPath="@_profile.AvatarPath" OnChanged="RefreshImagesAsync" />
+               <ImageUploader UserId="@(_userId ?? string.Empty)" Kind="ImageKind.Banner" Title="Банер"
+                            CurrentPath="@_profile.BannerPath" OnChanged="RefreshImagesAsync" />
+               <ImageUploader UserId="@(_userId ?? string.Empty)" Kind="ImageKind.Background" Title="Фонове зображення сторінки"
+                            CurrentPath="@_profile.BackgroundImagePath" OnChanged="RefreshImagesAsync" />
+            </section>
             <section>
                 <h2>Готові теми</h2>
                 <div class="preset-buttons">
@@ -137,15 +148,22 @@ else
             </div>
         </div>
 
-        <div class="preview" style="@_previewTheme.ToCssVariables()">
-            <div class="preview-banner"></div>
+        <div class="preview" style="@PreviewStyle">
+            <div class="preview-banner" style="@BannerStyle"></div>
             <div class="preview-body">
-                <div class="preview-avatar">@Initial</div>
-                <h3>@(string.IsNullOrWhiteSpace(_displayName) ? "Назва профілю" : _displayName.Trim())</h3>
-                <div class="preview-muted">@@@_profile.Username</div>
+                @if (_profile.AvatarPath is not null)
+                    {
+                        <img class="preview-avatar" src="@_profile.AvatarPath" alt="Аватарка" />
+                    }
+                    else
+                    {
+                    <div class="preview-avatar">@Initial</div>
+                    }
+                    <h3>@(string.IsNullOrWhiteSpace(_displayName) ? "Назва профілю" : _displayName.Trim())</h3>
+                    <div class="preview-muted">@@@_profile.Username</div>
 
-                @foreach (var block in _profile.Blocks.Where(b => b.IsVisible))
-                {
+                    @foreach (var block in _profile.Blocks.Where(b => b.IsVisible))
+                    {
                     <div class="preview-block">
                         <h4>@block.Title</h4>
                         @if (block is AboutBlock)
@@ -157,7 +175,7 @@ else
                             <p class="preview-muted">Тут відображатиметься вміст блоку.</p>
                         }
                     </div>
-                }
+                    }
             </div>
         </div>
     </div>
@@ -292,4 +310,16 @@ else
             _error = ex.Message;
         }
     }
+    private async Task RefreshImagesAsync()
+    {
+    _profile = await ProfileService.GetByUserIdAsync(_userId!);
+    }
+
+    private string PreviewStyle =>
+        _previewTheme!.ToCssVariables() +
+        (_profile?.BackgroundImagePath is null ? "" : $";--bg-image:url('{_profile.BackgroundImagePath}')");
+
+    private string? BannerStyle =>
+        _profile?.BannerPath is null ? null : $"background-image:url('{_profile.BannerPath}')";
+
 }
