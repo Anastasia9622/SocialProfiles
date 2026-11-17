@@ -1,7 +1,93 @@
 ﻿@page "/"
+@inject NavigationManager Navigation
 
-<PageTitle>Home</PageTitle>
+<PageTitle>YORA</PageTitle>
 
-<h1>Hello, world!</h1>
+<section class="home-hero">
+    <div class="home-hero-text">
+        <h1>Ваша сторінка — <span>ваші правила</span></h1>
+        <p class="home-lead">
+            Соціальна мережа, де профіль належить вам: оберіть тему й кольори, додайте
+            аватарку, банер і фонове зображення (навіть GIF), змініть порядок блоків
+            та спілкуйтеся на стіні коментарів.
+        </p>
 
-Welcome to your new app.
+        <div class="home-actions">
+            <AuthorizeView>
+                <Authorized>
+                    <a class="home-btn home-btn-primary" href="/my-profile">Мій профіль</a>
+                    <a class="home-btn home-btn-ghost" href="/edit-profile">Редагувати профіль</a>
+                </Authorized>
+                <NotAuthorized>
+                    <a class="home-btn home-btn-primary" href="/Account/Register">Створити профіль</a>
+                    <a class="home-btn home-btn-ghost" href="/Account/Login">Увійти</a>
+                </NotAuthorized>
+            </AuthorizeView>
+        </div>
+    </div>
+
+    <div class="home-hero-art" aria-hidden="true">
+        <div class="mock mock-a">
+            <div class="mock-banner"></div>
+            <div class="mock-avatar"></div>
+            <div class="mock-line long"></div>
+            <div class="mock-line short"></div>
+            <div class="mock-card"></div>
+        </div>
+        <div class="mock mock-b">
+            <div class="mock-banner"></div>
+            <div class="mock-avatar"></div>
+            <div class="mock-line long"></div>
+            <div class="mock-line short"></div>
+            <div class="mock-card"></div>
+        </div>
+    </div>
+</section>
+
+<section class="home-features">
+    <article class="home-feature">
+        <div class="home-feature-icon" aria-hidden="true">🎨</div>
+        <h2>Власний стиль</h2>
+        <p>Готові теми, довільні кольори з перевіркою контрасту, аватарка, банер і фон.</p>
+    </article>
+    <article class="home-feature">
+        <div class="home-feature-icon" aria-hidden="true">💬</div>
+        <h2>Стіна коментарів</h2>
+        <p>Коментуйте профілі, відповідайте на коментарі, видаляйте зайве на своїй стіні.</p>
+    </article>
+    <article class="home-feature">
+        <div class="home-feature-icon" aria-hidden="true">👥</div>
+        <h2>Підписки</h2>
+        <p>Підписуйтеся на цікаві профілі й стежте за кількістю підписників.</p>
+    </article>
+</section>
+
+<section class="home-search">
+    <h2>Знайти профіль</h2>
+    <p>Введіть ім'я користувача, щоб відкрити його сторінку.</p>
+    <div class="home-search-row">
+        <label for="usernameSearch" class="visually-hidden">Ім'я користувача</label>
+        <input id="usernameSearch" class="form-control" placeholder="Наприклад, anastasia"
+               @bind="_username" @bind:event="oninput" @onkeydown="OnKeyDown" />
+        <button type="button" class="home-btn home-btn-primary" @onclick="OpenProfile">Відкрити</button>
+    </div>
+</section>
+
+@code {
+    private string _username = "";
+
+    private void OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+            OpenProfile();
+    }
+
+    private void OpenProfile()
+    {
+        var name = _username.Trim();
+        if (name.Length == 0)
+            return;
+
+        Navigation.NavigateTo($"/u/{Uri.EscapeDataString(name)}");
+    }
+}

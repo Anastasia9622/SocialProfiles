@@ -49,3 +49,272 @@ h1:focus {
 .darker-border-checkbox.form-check-input {
     border-color: #929292;
 }
+
+/* ===== Головна сторінка ===== */
+.home-hero {
+    display: grid;
+    grid-template-columns: 1.3fr 1fr;
+    gap: 32px;
+    align-items: center;
+    padding: 48px;
+    margin-bottom: 32px;
+    border-radius: 24px;
+    color: #f3eaff;
+    background: radial-gradient(circle at 85% 15%, rgba(255, 95, 162, 0.35), transparent 45%), linear-gradient(135deg, #1b1033 0%, #3a2370 100%);
+}
+
+    .home-hero h1 {
+        margin-bottom: 16px;
+        font-size: clamp(2rem, 4vw, 3.2rem);
+        font-weight: 800;
+        line-height: 1.1;
+    }
+
+        .home-hero h1 span {
+            color: #ff8fc0;
+        }
+
+.home-lead {
+    max-width: 34em;
+    margin-bottom: 28px;
+    font-size: 1.15rem;
+}
+
+
+.home-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+}
+
+.home-btn {
+    display: inline-block;
+    padding: 12px 26px;
+    border: 2px solid transparent;
+    border-radius: 999px;
+    font-weight: 700;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+    .home-btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+    }
+
+    .home-btn:focus-visible {
+        outline: 3px solid #ffd1e6;
+        outline-offset: 2px;
+    }
+
+.home-btn-primary {
+    background-color: #ff5fa2;
+    color: #1b1033;
+}
+
+
+    .home-btn-primary:hover {
+        background-color: #ff7ab2;
+        color: #1b1033;
+    }
+
+.home-btn-ghost {
+    border-color: #f3eaff;
+    background-color: transparent;
+    color: #f3eaff;
+}
+
+    .home-btn-ghost:hover {
+        background-color: rgba(243, 234, 255, 0.12);
+        color: #ffffff;
+    }
+
+/* Мініатюри профілів */
+.home-hero-art {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+}
+
+.mock {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 150px;
+    height: 200px;
+    padding-bottom: 12px;
+    overflow: hidden;
+    border-radius: 14px;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+}
+
+.mock-a {
+    background-color: #1b1033;
+    transform: rotate(-4deg) translateY(10px);
+}
+
+.mock-b {
+    background-color: #ffffff;
+    transform: rotate(4deg) translateY(-10px);
+}
+
+.mock-banner {
+    flex: none;
+    height: 56px;
+}
+
+.mock-a .mock-banner {
+    background: linear-gradient(135deg, #ff5fa2, #2a1a4d);
+}
+
+.mock-b .mock-banner {
+    background: linear-gradient(135deg, #6a3fd1, #f1f1f6);
+}
+
+.mock-avatar {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    margin: -22px 0 0 12px;
+    border: 3px solid;
+    border-radius: 50%;
+}
+
+.mock-a .mock-avatar {
+    background-color: #2a1a4d;
+    border-color: #ff5fa2;
+}
+
+.mock-b .mock-avatar {
+    background-color: #f1f1f6;
+    border-color: #6a3fd1;
+}
+
+.mock-line {
+    height: 8px;
+    margin-left: 12px;
+    border-radius: 4px;
+}
+
+    .mock-line.long {
+        width: 70%;
+    }
+
+    .mock-line.short {
+        width: 45%;
+    }
+
+.mock-a .mock-line {
+    background-color: rgba(243, 234, 255, 0.55);
+}
+
+.mock-b .mock-line {
+    background-color: rgba(27, 16, 51, 0.35);
+}
+
+.mock-card {
+    flex: 1;
+    margin: 4px 12px 0;
+    border-radius: 8px;
+}
+
+.mock-a .mock-card {
+    background-color: #2a1a4d;
+}
+
+.mock-b .mock-card {
+    background-color: #f1f1f6;
+}
+
+/* Картки можливостей */
+.home-features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+    margin-bottom: 32px;
+}
+
+.home-feature {
+    padding: 24px;
+    border: 1px solid #e6dff5;
+    border-top: 4px solid #ff5fa2;
+    border-radius: 16px;
+    background-color: #ffffff;
+    color: #2a1a4d;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+    .home-feature:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 12px 28px rgba(58, 35, 112, 0.15);
+    }
+
+.home-feature-icon {
+    margin-bottom: 8px;
+    font-size: 2rem;
+}
+
+.home-feature h2 {
+    margin-bottom: 8px;
+    font-size: 1.25rem;
+    font-weight: 700;
+}
+
+.home-feature p {
+    margin: 0;
+    color: #4a3a6b;
+}
+
+/* Пошук профілю */
+.home-search {
+    max-width: 560px;
+    padding: 28px;
+    border-radius: 20px;
+    background-color: #f6f2ff;
+}
+
+    .home-search h2 {
+        margin-bottom: 4px;
+        font-size: 1.35rem;
+        color: #2a1a4d;
+    }
+
+    .home-search p {
+        color: #4a3a6b;
+    }
+
+.home-search-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+    .home-search-row input {
+        flex: 1 1 220px;
+    }
+
+@media (max-width: 800px) {
+    .home-hero {
+        grid-template-columns: 1fr;
+        padding: 32px 24px;
+    }
+
+
+    .home-hero-art {
+        display: none;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .home-btn,
+    .home-feature {
+        transition: none;
+    }
+
+        .home-btn:hover,
+        .home-feature:hover {
+            transform: none;
+        }
+}
