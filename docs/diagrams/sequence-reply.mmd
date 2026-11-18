@@ -1,0 +1,22 @@
+sequenceDiagram
+    actor U as Користувач
+    participant UI as ProfilePage
+    participant S as CommentService
+    participant R as ICommentRepository
+    participant C as Comment
+
+    U->>UI: Пише відповідь і натискає Надіслати
+    UI->>S: ReplyAsync(parentId, authorId, text)
+    S->>R: GetByIdAsync(parentId)
+    R-->>S: батьківський коментар
+    S->>C: parent.CreateReply(authorId, text)
+    alt відповідь на відповідь або некоректний текст
+        C-->>S: DomainException
+        S-->>UI: DomainException
+        UI-->>U: Повідомлення про помилку
+    else правила дотримано
+        C-->>S: новий коментар
+        S->>R: AddAsync(reply)
+        S-->>UI: готово
+        UI-->>U: Відповідь з'являється під коментарем
+    end

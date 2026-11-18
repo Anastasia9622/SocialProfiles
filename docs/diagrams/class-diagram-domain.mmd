@@ -1,0 +1,120 @@
+classDiagram
+    direction TB
+
+    class Profile {
+        +Guid Id
+        +string UserId
+        +string Username
+        +string DisplayName
+        +string About
+        +string AvatarPath
+        +string BannerPath
+        +string BackgroundImagePath
+        +Theme Theme
+        +UpdateInfo(string displayName, string about)
+        +ChangeTheme(Theme theme)
+        +GetImagePath(ImageKind kind) string
+        +SetImage(ImageKind kind, string path)
+        +RemoveImage(ImageKind kind)
+        +AddBlock(ProfileBlock block)
+        +MoveBlockUp(Guid blockId)
+        +MoveBlockDown(Guid blockId)
+    }
+
+    class Theme {
+        +string BackgroundColor
+        +string CardColor
+        +string TextColor
+        +string AccentColor
+        +Validate() bool
+        +ContrastRatio() double
+        +ToCssVariables() string
+    }
+
+    class ThemePreset {
+        <<abstract>>
+        +string Name
+        +CreateTheme()* Theme
+    }
+    class DarkPreset
+    class LightPreset
+    class PresetCatalog {
+        <<static>>
+        +List~ThemePreset~ All
+    }
+
+    class ProfileBlock {
+        <<abstract>>
+        +Guid Id
+        +int Position
+        +bool IsVisible
+        +string Title
+        +bool CanBeHidden
+        +SetVisibility(bool visible)
+    }
+    class AboutBlock
+    class CommentsBlock
+    class FollowersBlock
+
+    class Comment {
+        +Guid Id
+        +Guid ProfileId
+        +string AuthorId
+        +Guid ParentCommentId
+        +string Text
+        +DateTime CreatedAt
+        +bool IsReply
+        +CreateReply(string authorId, string text) Comment
+        +CanBeDeletedBy(string userId, string wallOwnerId) bool
+    }
+
+    class Follow {
+        +string FollowerId
+        +string FollowedId
+        +DateTime CreatedAt
+    }
+
+    class ImageKind {
+        <<enumeration>>
+        Avatar
+        Banner
+        Background
+    }
+    class ImageFormat {
+        <<enumeration>>
+        Png
+        Jpeg
+        Gif
+        WebP
+    }
+    class ImageSignature {
+        <<static>>
+        +Detect(bytes) ImageFormat
+    }
+    class ImageUpload {
+        +ImageKind Kind
+        +ImageFormat Format
+        +long SizeBytes
+        +string Extension
+        +MaxBytes(ImageKind kind) long
+        +IsValidPublicPath(string path) bool
+    }
+
+    class DomainException
+
+    ThemePreset <|-- DarkPreset
+    ThemePreset <|-- LightPreset
+    ProfileBlock <|-- AboutBlock
+    ProfileBlock <|-- CommentsBlock
+    ProfileBlock <|-- FollowersBlock
+
+    Profile "1" *-- "1" Theme : тема
+    Profile "1" *-- "many" ProfileBlock : блоки
+    Profile "1" o-- "many" Comment : стіна
+    Comment "1" o-- "many" Comment : відповіді
+    ThemePreset ..> Theme : створює
+    PresetCatalog o-- ThemePreset
+    ImageUpload ..> ImageSignature : розпізнає формат
+    ImageUpload --> ImageKind
+    ImageUpload --> ImageFormat
+    Profile ..> ImageUpload : перевірка шляху

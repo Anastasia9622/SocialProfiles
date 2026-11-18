@@ -1,0 +1,29 @@
+sequenceDiagram
+    actor U as Користувач
+    participant UI as ImageUploader
+    participant S as ProfileImageService
+    participant P as IProfileRepository
+    participant V as ImageUpload
+    participant F as IImageStorage
+    participant Pr as Profile
+
+    U->>UI: Обирає файл
+    UI->>S: UploadAsync(userId, kind, stream)
+    S->>P: GetByUserIdAsync(userId)
+    P-->>S: профіль
+    S->>S: Читає потік з обмеженням розміру
+    S->>V: new ImageUpload(kind, data)
+    alt не зображення або завеликий файл
+        V-->>S: DomainException
+        S-->>UI: DomainException
+        UI-->>U: Повідомлення про помилку
+    else файл коректний
+        V-->>S: формат і розширення
+        S->>F: SaveAsync(data, extension)
+        F-->>S: публічний шлях
+        S->>Pr: SetImage(kind, path)
+        S->>P: SaveAsync(profile)
+        S->>F: DeleteAsync(старий шлях)
+        S-->>UI: новий шлях
+        UI-->>U: Мініатюра оновлюється
+    end

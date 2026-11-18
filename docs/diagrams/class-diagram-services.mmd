@@ -1,0 +1,88 @@
+classDiagram
+    direction LR
+
+    class ProfileService {
+        +CreateAsync(string userId, string username, string displayName) Profile
+        +GetByUsernameAsync(string username) Profile
+        +GetByUserIdAsync(string userId) Profile
+        +IsUsernameAvailableAsync(string username) bool
+        +UpdateInfoAsync(string userId, string displayName, string about)
+        +ChangeThemeAsync(string userId, Theme theme)
+        +ApplyPresetAsync(string userId, ThemePreset preset)
+        +MoveBlockAsync(string userId, Guid blockId, bool up)
+        +GetProfilesByUserIdsAsync(IEnumerable userIds) Dictionary
+    }
+    class ProfileImageService {
+        +UploadAsync(string userId, ImageKind kind, Stream content) string
+        +RemoveAsync(string userId, ImageKind kind)
+    }
+    class CommentService {
+        +GetWallAsync(Guid profileId) List
+        +AddAsync(Guid profileId, string authorId, string text) Comment
+        +ReplyAsync(Guid parentId, string authorId, string text) Comment
+        +DeleteAsync(Guid commentId, string userId)
+    }
+    class FollowService {
+        +FollowAsync(string followerId, string targetUserId)
+        +UnfollowAsync(string followerId, string targetUserId)
+        +IsFollowingAsync(string followerId, string targetUserId) bool
+        +CountFollowersAsync(string userId) int
+        +CountFollowingAsync(string userId) int
+    }
+
+    class IProfileRepository {
+        <<interface>>
+        +GetByIdAsync(Guid id) Profile
+        +GetByUserIdAsync(string userId) Profile
+        +GetByUsernameAsync(string username) Profile
+        +UsernameExistsAsync(string username) bool
+        +AddAsync(Profile profile)
+        +SaveAsync(Profile profile)
+    }
+    class ICommentRepository {
+        <<interface>>
+        +GetByIdAsync(Guid id) Comment
+        +GetByProfileAsync(Guid profileId) List
+        +AddAsync(Comment comment)
+        +DeleteAsync(Comment comment)
+    }
+    class IFollowRepository {
+        <<interface>>
+        +ExistsAsync(string followerId, string followedId) bool
+        +AddAsync(Follow follow)
+        +RemoveAsync(string followerId, string followedId)
+        +CountFollowersAsync(string userId) int
+        +CountFollowingAsync(string userId) int
+    }
+    class IImageStorage {
+        <<interface>>
+        +SaveAsync(bytes content, string extension) string
+        +DeleteAsync(string publicPath)
+    }
+
+    class EfProfileRepository
+    class EfCommentRepository
+    class EfFollowRepository
+    class LocalImageStorage
+    class ApplicationDbContext {
+        +Profiles
+        +Comments
+        +Follows
+    }
+
+    ProfileService ..> IProfileRepository
+    ProfileImageService ..> IProfileRepository
+    ProfileImageService ..> IImageStorage
+    CommentService ..> ICommentRepository
+    CommentService ..> IProfileRepository
+    FollowService ..> IFollowRepository
+    FollowService ..> IProfileRepository
+
+    EfProfileRepository ..|> IProfileRepository
+    EfCommentRepository ..|> ICommentRepository
+    EfFollowRepository ..|> IFollowRepository
+    LocalImageStorage ..|> IImageStorage
+
+    EfProfileRepository ..> ApplicationDbContext
+    EfCommentRepository ..> ApplicationDbContext
+    EfFollowRepository ..> ApplicationDbContext

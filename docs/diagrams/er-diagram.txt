@@ -1,0 +1,49 @@
+Table AspNetUsers {
+  Id varchar [pk]
+  UserName varchar
+  Email varchar
+  PasswordHash varchar
+  Note: 'Таблиця ASP.NET Core Identity (скорочено)'
+}
+
+Table Profiles {
+  Id uuid [pk]
+  UserId varchar [unique, ref: - AspNetUsers.Id]
+  Username varchar [unique, note: 'без урахування регістру']
+  DisplayName varchar
+  About text
+  AvatarPath varchar [null]
+  BannerPath varchar [null]
+  BackgroundImagePath varchar [null]
+  BackgroundColor varchar
+  CardColor varchar
+  TextColor varchar
+  AccentColor varchar
+  Note: 'Чотири кольори теми зберігаються разом із профілем'
+}
+
+Table ProfileBlocks {
+  Id uuid [pk]
+  ProfileId uuid [ref: > Profiles.Id]
+  BlockType varchar [note: 'About, Comments або Followers']
+  Position int
+  IsVisible bool
+}
+
+Table Comments {
+  Id uuid [pk]
+  ProfileId uuid [ref: > Profiles.Id, note: 'на чиїй стіні']
+  AuthorId varchar [ref: > AspNetUsers.Id]
+  ParentCommentId uuid [null, ref: > Comments.Id, note: 'порожнє для головного коментаря']
+  Text varchar
+  CreatedAt datetime
+}
+
+Table Follows {
+  FollowerId varchar [ref: > AspNetUsers.Id]
+  FollowedId varchar [ref: > AspNetUsers.Id]
+  CreatedAt datetime
+  indexes {
+    (FollowerId, FollowedId) [pk]
+  }
+}

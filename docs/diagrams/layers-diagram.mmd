@@ -1,0 +1,22 @@
+flowchart LR
+    subgraph Web["SocialProfiles.Web"]
+        UI["Blazor: сторінки і компоненти"]
+        Infra["EF Core репозиторії, LocalImageStorage"]
+    end
+
+    subgraph Core["SocialProfiles.Core"]
+        App["Application: сервіси та інтерфейси"]
+        Dom["Domain: класи з правилами"]
+    end
+
+    Tests["SocialProfiles.Tests"]
+    DB[("SQLite")]
+    Files[("Папка uploads")]
+
+    UI --> App
+    Infra -. реалізує інтерфейси .-> App
+    App --> Dom
+    Infra --> DB
+    Infra --> Files
+    Tests --> Dom
+    Tests --> App
